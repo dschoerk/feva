@@ -1,4 +1,5 @@
 # Built-in
+from pathlib import Path
 import time
 import os
 import json
@@ -166,16 +167,21 @@ def loadProject(project_name):
     response.data['message'] = 'Project Loaded'
     
     # Create Thumbnail and Preview in a different thread
-    x = threading.Thread(target=create_thumbnail_and_preview, args=(project_name, "mp4",))
+    x = threading.Thread(target=create_thumbnail_and_preview, args=(project_name, "avi",))
     x.daemon = False
     x.start()
     
     return jsonify(response.getResponse())
 
 def create_thumbnail_and_preview(project_name, extension="mp4"):    
-    if not os.path.exists(root_data_path + project_name + '/' + project_name + '_generator.' + extension):
+
+    generator_file_path = root_data_path + project_name + '/' + project_name + '_generator.' + extension
+    print(f'{generator_file_path=} os.path.exists={os.path.exists(generator_file_path)}')
+
+    if not Path(generator_file_path).is_file():
         cmd = './ffprobe -v quiet -print_format json -show_streams "' + root_data_path + project_name + '/' + project_name + '.' + extension + '"' 
         results = os.popen(cmd).read()
+        print(results)
         metadata = json.loads(results)
         print(metadata)
         md = {}
@@ -184,32 +190,40 @@ def create_thumbnail_and_preview(project_name, extension="mp4"):
         stream_index_video = md['video']
         width = metadata['streams'][stream_index_video]['width']
         height = metadata['streams'][stream_index_video]['height']
-    
+
+        video_file_path = root_data_path + project_name + '/' + project_name + '.' + extension
+        tmp_video_file_path = root_data_path + project_name + '/temp_' + project_name + '.' + extension
+        
+        print(f'{video_file_path=} os.path.exists={os.path.exists(video_file_path)}')
+        print(f'{tmp_video_file_path=} os.path.exists={os.path.exists(tmp_video_file_path)}')
+        
+
         # Create Thumbnails
         # PORTRAIT
         if height>width:
-            cmd = './ffmpeg -i "' + root_data_path + project_name + '/' + project_name + '.' + extension + '" -filter:v scale=200:-1 "' + root_data_path + project_name + '/temp_' + project_name + '.' + extension + '"'
+            cmd = './ffmpeg -y -i "' + video_file_path + '" -filter:v scale=200:-1 "' + tmp_video_file_path + '"'
         
         # LANDSACPE
         else:
-            cmd = './ffmpeg -i "' + root_data_path + project_name + '/' + project_name + '.' + extension + '" -filter:v scale=202:-1 "' + root_data_path + project_name + '/temp_' + project_name + '.' + extension + '"'
-        
+            cmd = './ffmpeg -y -i "' + video_file_path + '" -filter:v scale=202:-1 "' + tmp_video_file_path + '"'
+
         results = os.popen(cmd).read()
+        print(results)
         # TODO: Check if the file was created successfully
         
-        if os.path.exists(root_data_path + project_name + '/temp_' + project_name + '.' + extension and not os.path.exists(root_data_path + project_name + '/' + project_name + '_generator.' + extension)):
-            os.rename(  root_data_path + project_name + '/temp_' + project_name + '.' + extension,
-                        root_data_path + project_name + '/' + project_name + '_generator.' + extension)  
+        if os.path.exists(tmp_video_file_path and not os.path.exists(generator_file_path)):
+            os.rename(  tmp_video_file_path, generator_file_path)  
     
-    if not os.path.exists(root_data_path + project_name + '/' + project_name + '_thumbnail.gif'):
+    thumbnail_path = root_data_path + project_name + '/' + project_name + '_thumbnail.gif'
+    thumbnail_temp_path = root_data_path + project_name + '/temp_' + project_name + '_thumbnail.gif'
+    if not Path(thumbnail_path).is_file(): #os.path.exists(thumbnail_path):
         # Create Preview Gifs
         # -v quiet -print_format json
-        cmd = './ffmpeg -i "' + root_data_path + project_name + '/' + project_name + '.' + extension + '" -vf "setpts=N/TB/1000" -r 2 -loop 0 "' + root_data_path + project_name + '/temp_' + project_name + '_thumbnail.gif' + '"'
+        cmd = './ffmpeg -i "' + root_data_path + project_name + '/' + project_name + '.' + extension + '" -vf "setpts=N/TB/1000" -r 2 -loop 0 "' + thumbnail_temp_path + '"'
         results = os.popen(cmd).read()
     
-        if os.path.exists(root_data_path + project_name + '/temp_' + project_name + '_thumbnail.gif'):
-            os.rename(  root_data_path + project_name + '/temp_' + project_name + '_thumbnail.gif',
-                        root_data_path + project_name + '/' + project_name + '_thumbnail.gif')
+        if os.path.exists(thumbnail_temp_path):
+            os.rename(thumbnail_temp_path, thumbnail_path)
 
 # Create a brand new project
 @app.route('/createNewProject/<project_name>/<dataset_name>', methods = ['POST'])
@@ -351,7 +365,7 @@ def getVideoMetadata(video_name):
         md['streams'][st['codec_type']] = st['index']
 
     stream_index_video = md['streams']['video']
-    stream_index_audio = md['streams']['audio']
+    #stream_index_audio = md['streams']['audio']
 
     md['width'] = metadata['streams'][stream_index_video]['width']
     md['height'] = metadata['streams'][stream_index_video]['height']

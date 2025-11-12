@@ -25,7 +25,9 @@ from werkzeug.utils import secure_filename
 # CLI arguement parser
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", "-p", help="Specify port number (Default 8000)")
+parser.add_argument("--host", default="127.0.0.1", help="Specify host")
 parser.add_argument("--loglevel", "-l", help="Verbosity of the logging screen prints [D=Debug, I=Info, W=Warning, E=Error, and C=Critical (Default)]")
+
 args = parser.parse_args()
 
 # Logging Levels Reference
@@ -576,4 +578,4 @@ def saveAsData(name, all_data):
 if __name__ == '__main__':
     # x = threading.Thread(target=launch_chrome)
     # x.start()
-    app.run(threaded=True, port=port_number)
+    app.run(threaded=True, port=port_number, host=args.host)

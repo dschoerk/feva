@@ -22,16 +22,9 @@ ENV PATH="/root/.cargo/bin:$PATH"
 
 # Copy dependency file (pyproject.toml or requirements.txt)
 COPY pyproject.toml ./
-# If you use requirements.txt instead, comment the above and uncomment below:
-# COPY requirements.txt ./
-
-# Install dependencies using uv
-RUN uv pip install --system --no-cache-dir -r requirements.txt || true
-# Or if using pyproject.toml:
-# RUN uv pip install --system --no-cache-dir .
-
-# Copy the application code
 COPY . .
+
+RUN /root/.local/bin/uv run download_ffmpeg.py
 
 # Expose Flask port
 EXPOSE 5000

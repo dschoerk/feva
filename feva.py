@@ -180,9 +180,8 @@ def create_thumbnail_and_preview(project_name, extension="mp4"):
     if not Path(generator_file_path).is_file():
         cmd = './ffprobe -v quiet -print_format json -show_streams "' + root_data_path + project_name + '/' + project_name + '.' + extension + '"' 
         results = os.popen(cmd).read()
-        print(results)
+        
         metadata = json.loads(results)
-        print(metadata)
         md = {}
         for st in metadata['streams']:
             md[st['codec_type']] = st['index']
@@ -352,7 +351,6 @@ def getVideoMetadata(video_name):
     cmd = "./ffprobe -v quiet -print_format json -show_streams " + os.getcwd() + "/static/data/" + video_name + "/" + video_name + '.mp4'
     results = os.popen(cmd).read()
     metadata = json.loads(results)
-    # print(results)
     
     md = {}
     md['streams'] = {}

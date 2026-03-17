@@ -167,7 +167,7 @@ def loadProject(project_name):
     response.data['message'] = 'Project Loaded'
     
     # Create Thumbnail and Preview in a different thread
-    x = threading.Thread(target=create_thumbnail_and_preview, args=(project_name, "avi",))
+    x = threading.Thread(target=create_thumbnail_and_preview, args=(project_name, "mp4",))
     x.daemon = False
     x.start()
     
@@ -176,8 +176,7 @@ def loadProject(project_name):
 def create_thumbnail_and_preview(project_name, extension="mp4"):    
 
     generator_file_path = root_data_path + project_name + '/' + project_name + '_generator.' + extension
-    print(f'{generator_file_path=} os.path.exists={os.path.exists(generator_file_path)}')
-
+    
     if not Path(generator_file_path).is_file():
         cmd = './ffprobe -v quiet -print_format json -show_streams "' + root_data_path + project_name + '/' + project_name + '.' + extension + '"' 
         results = os.popen(cmd).read()
@@ -194,21 +193,17 @@ def create_thumbnail_and_preview(project_name, extension="mp4"):
         video_file_path = root_data_path + project_name + '/' + project_name + '.' + extension
         tmp_video_file_path = root_data_path + project_name + '/temp_' + project_name + '.' + extension
         
-        print(f'{video_file_path=} os.path.exists={os.path.exists(video_file_path)}')
-        print(f'{tmp_video_file_path=} os.path.exists={os.path.exists(tmp_video_file_path)}')
-        
 
         # Create Thumbnails
         # PORTRAIT
         if height>width:
-            cmd = './ffmpeg -y -i "' + video_file_path + '" -filter:v scale=200:-1 "' + tmp_video_file_path + '"'
+            cmd = './ffmpeg -i "' + video_file_path + '" -filter:v scale=200:-1 "' + tmp_video_file_path + '"'
         
         # LANDSACPE
         else:
-            cmd = './ffmpeg -y -i "' + video_file_path + '" -filter:v scale=202:-1 "' + tmp_video_file_path + '"'
+            cmd = './ffmpeg -i "' + video_file_path + '" -filter:v scale=202:-1 "' + tmp_video_file_path + '"'
 
         results = os.popen(cmd).read()
-        print(results)
         # TODO: Check if the file was created successfully
         
         if os.path.exists(tmp_video_file_path and not os.path.exists(generator_file_path)):
